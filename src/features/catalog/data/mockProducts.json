@@ -1,0 +1,135 @@
+[
+  {
+    "id": 1,
+    "name": "Smartphone XYZ Pro",
+    "description": "El teléfono más avanzado con cámara de 108MP y pantalla OLED de 120Hz.",
+    "price": 899.99,
+    "sku": "SMART-XYZ-PRO",
+    "categoryId": 1,
+    "images": [
+      {
+        "id": 101,
+        "url": "https://images.unsplash.com/photo-1598327105666-5b89351cb31c?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 1,
+        "isFeatured": true
+      },
+      {
+        "id": 1011,
+        "url": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 2,
+        "isFeatured": false
+      },
+      {
+        "id": 1012,
+        "url": "https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 3,
+        "isFeatured": false
+      }
+    ],
+    "features": {
+      "Pantalla": "OLED 120Hz",
+      "Cámara": "108MP",
+      "Almacenamiento": "256GB"
+    },
+    "stock": 45,
+    "createdAt": "2026-08-20T10:00:00Z",
+    "updatedAt": "2026-08-25T14:30:00Z"
+  },
+  {
+    "id": 2,
+    "name": "Laptop UltraBook 14\"",
+    "description": "Portátil ultraligero para profesionales. Procesador de 12 núcleos y 16GB RAM.",
+    "price": 1299.50,
+    "sku": "LAP-ULTRA-14",
+    "categoryId": 1,
+    "images": [
+      {
+        "id": 102,
+        "url": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 1,
+        "isFeatured": true
+      },
+      {
+        "id": 1021,
+        "url": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 2,
+        "isFeatured": false
+      }
+    ],
+    "features": {
+      "Procesador": "Intel Core i7 12va Gen",
+      "RAM": "16GB LPDDR5",
+      "Almacenamiento": "512GB SSD NVMe",
+      "Pantalla": "14\" IPS FHD"
+    },
+    "stock": 12,
+    "createdAt": "2026-08-21T09:15:00Z",
+    "updatedAt": "2026-08-22T11:20:00Z"
+  },
+  {
+    "id": 3,
+    "name": "Auriculares Inalámbricos Noise Cancelling",
+    "description": "Sumérgete en tu música sin distracciones. Batería de 30 horas.",
+    "price": 199.99,
+    "sku": "AUD-NC-01",
+    "categoryId": 2,
+    "images": [
+      {
+        "id": 103,
+        "url": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 1,
+        "isFeatured": true
+      },
+      {
+        "id": 1031,
+        "url": "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 2,
+        "isFeatured": false
+      }
+    ],
+    "features": {
+      "Conectividad": "Bluetooth 5.2",
+      "Batería": "Hasta 30 horas",
+      "Cancelación de Ruido": "Activa (ANC)"
+    },
+    "stock": 0,
+    "createdAt": "2026-08-22T08:30:00Z",
+    "updatedAt": "2026-08-28T16:45:00Z"
+  },
+  {
+    "id": 4,
+    "name": "Reloj Inteligente Fit Pro",
+    "description": "Monitor de ritmo cardíaco, GPS y sumergible 50 metros.",
+    "price": 149.00,
+    "sku": "SW-FIT-PRO",
+    "categoryId": 3,
+    "images": [
+      {
+        "id": 104,
+        "url": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 1,
+        "isFeatured": true
+      },
+      {
+        "id": 1041,
+        "url": "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 2,
+        "isFeatured": false
+      },
+      {
+        "id": 1042,
+        "url": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&q=80&w=800",
+        "sortOrder": 3,
+        "isFeatured": false
+      }
+    ],
+    "features": {
+      "Pantalla": "1.4\" AMOLED",
+      "Resistencia al Agua": "50 metros (5 ATM)",
+      "Sensores": "Ritmo cardíaco, GPS, SpO2"
+    },
+    "stock": 28,
+    "createdAt": "2026-08-23T11:00:00Z",
+    "updatedAt": "2026-08-29T09:00:00Z"
+  }
+]
