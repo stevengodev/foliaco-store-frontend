@@ -31,6 +31,7 @@ export const AdminLayout: React.FC = () => {
     'Catálogo': false,
     'Pedidos': false,
     'Inventario': false,
+    'Proveedores': false,
   });
 
   const toggleMenu = (menuName: string) => {
@@ -64,7 +65,14 @@ export const AdminLayout: React.FC = () => {
         { name: 'Movimientos', path: '/admin/inventory/movements' }
       ]
     },
-    { name: 'Proveedores', path: '/admin/suppliers', icon: <Truck size={20} /> },
+    { 
+      name: 'Proveedores', 
+      icon: <Truck size={20} />,
+      subItems: [
+        { name: 'Directorio', path: '/admin/suppliers' },
+        { name: 'Órdenes de Compra', path: '/admin/suppliers/orders' }
+      ]
+    },
     { name: 'Estadísticas', path: '/admin/stats', icon: <FileText size={20} /> },
   ];
 

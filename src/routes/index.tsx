@@ -15,12 +15,14 @@ import { AdminProductsPage } from '@/features/admin/pages/AdminProductsPage';
 import { AdminCategoriesPage } from '@/features/admin/pages/AdminCategoriesPage';
 import { CartPage } from '@/features/cart/pages/CartPage';
 import { CheckoutPage } from '@/features/cart/pages/CheckoutPage';
+import { MyOrdersPage } from '@/features/profile/pages/MyOrdersPage';
 import { AdminOrdersPage } from '@/features/admin/pages/AdminOrdersPage';
 import { AdminReceiptsPage } from '@/features/admin/pages/AdminReceiptsPage';
 import { AdminInventoryPage } from '@/features/admin/pages/AdminInventoryPage';
 import { AdminMovementsPage } from '@/features/admin/pages/AdminMovementsPage';
 import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage';
 import { AdminSuppliersPage } from '@/features/admin/pages/AdminSuppliersPage';
+import { AdminPurchaseOrdersPage } from '@/features/admin/pages/AdminPurchaseOrdersPage';
 
 // Componente para pruebas de UI que reemplaza temporalmente a App.tsx original
 import UIKitPage from '../App';
@@ -37,6 +39,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/products/:id" element={<ProductDetailsPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/profile/orders" element={<MyOrdersPage />} />
           
           {/* Ruta temporal para ver los componentes que construimos */}
           <Route path="/ui-kit" element={<UIKitPage />} />
@@ -62,6 +65,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="inventory/movements" element={<AdminMovementsPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="suppliers" element={<AdminSuppliersPage />} />
+          <Route path="suppliers/orders" element={<AdminPurchaseOrdersPage />} />
         </Route>
 
         {/* Ruta comodín para 404 */}

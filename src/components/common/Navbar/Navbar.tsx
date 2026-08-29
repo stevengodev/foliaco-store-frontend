@@ -7,7 +7,7 @@ import { useCartStore } from '@/features/cart/store/cartStore';
 export const Navbar: React.FC = () => {
   // Conectamos con el estado global de Zustand
   const cartItemsCount = useCartStore((state) => state.getTotalItems());
-  const isAuthenticated = false;
+  const isAuthenticated = true; // Hardcoded to true for testing MyOrders
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-brand-border bg-white/80 backdrop-blur-md">
@@ -50,12 +50,14 @@ export const Navbar: React.FC = () => {
           <div className="h-6 w-px bg-brand-border mx-1 hidden sm:block"></div>
 
           {isAuthenticated ? (
-            <Link to="/profile">
-              <Button variant="secondary" className="hidden sm:flex">
-                <User size={18} />
-                Mi Perfil
-              </Button>
-            </Link>
+            <div className="hidden sm:flex gap-2">
+              <Link to="/profile/orders">
+                <Button variant="secondary" className="flex">
+                  <User size={18} />
+                  Mi Perfil
+                </Button>
+              </Link>
+            </div>
           ) : (
             <div className="hidden sm:flex gap-2">
               <Link to="/login">
