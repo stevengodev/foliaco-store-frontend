@@ -15,12 +15,45 @@ export const AdminCategoryFormPage: React.FC = () => {
     active: true
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    const loadCategory = async () => {
+      if (isEditing && id) {
+        try {
+          const { catalogService } = await import('@/services/catalogService');
+          const cat = await catalogService.getCategoryById(Number(id));
+          if (cat) {
+            setFormData({
+              name: cat.name || '',
+              description: cat.description || '',
+              active: cat.active !== undefined ? cat.active : true
+            });
+          }
+        } catch (error) {
+          console.error("Error loading category", error);
+        }
+      }
+    };
+    loadCategory();
+  }, [id, isEditing]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulación de guardado
-    console.log('Guardando categoría:', formData);
-    alert(`Categoría ${isEditing ? 'actualizada' : 'creada'} con éxito (Simulado).`);
-    navigate('/admin/catalog/categories');
+    try {
+      const { catalogService } = await import('@/services/catalogService');
+      const payload = { ...formData };
+      
+      if (isEditing && id) {
+        await catalogService.updateCategory(Number(id), payload);
+        alert('Categoría actualizada con éxito.');
+      } else {
+        await catalogService.createCategory(payload);
+        alert('Categoría creada con éxito.');
+      }
+      navigate('/admin/catalog/categories');
+    } catch (error) {
+      console.error('Error saving category:', error);
+      alert('Error al guardar categoría');
+    }
   };
 
   return (

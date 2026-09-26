@@ -1,17 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
-
-// Mock simple de categorías ya que no tenemos JSON para esto aún
-const mockCategories = [
-  { id: 1, name: 'Electrónica', description: 'Dispositivos y gadgets.', productCount: 45 },
-  { id: 2, name: 'Audio', description: 'Auriculares y parlantes.', productCount: 12 },
-  { id: 3, name: 'Wearables', description: 'Relojes y bandas inteligentes.', productCount: 8 }
-];
+import { catalogService } from '@/services/catalogService';
 
 export const AdminCategoriesPage: React.FC = () => {
   const navigate = useNavigate();
+  const [categories, setCategories] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setIsLoading(true);
+        const data = await catalogService.getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  const filteredCategories = categories.filter(c => 
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="w-full">
@@ -40,6 +56,8 @@ export const AdminCategoriesPage: React.FC = () => {
             type="text"
             className="pl-10 w-full border border-brand-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-brand-text"
             placeholder="Buscar categoría..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
@@ -64,7 +82,13 @@ export const AdminCategoriesPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-brand-border">
-            {mockCategories.map((category) => (
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-8 text-center text-brand-subtext">
+                  Cargando categorías...
+                </td>
+              </tr>
+            ) : filteredCategories.map((category) => (
               <tr key={category.id} className="hover:bg-brand-bg">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-brand-text">
                   {category.name}
@@ -74,7 +98,7 @@ export const AdminCategoriesPage: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-brand-subtext">
                   <span className="bg-brand-bg text-brand-text px-2 py-1 rounded-full text-xs font-semibold">
-                    {category.productCount} productos
+                    {category.productCount || 0} productos
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -85,12 +109,34 @@ export const AdminCategoriesPage: React.FC = () => {
                   >
                     <Edit2 size={18} />
                   </button>
-                  <button className="text-red-600 hover:text-red-900 transition-colors" title="Eliminar">
+                  <button 
+                    className="text-red-600 hover:text-red-900 transition-colors" 
+                    title="Eliminar"
+                    onClick={async () => {
+                      if (window.confirm(`¿Estás seguro de eliminar la categoría "${category.name}"?`)) {
+                        try {
+                          await catalogService.deleteCategory(category.id);
+                          setCategories(categories.filter(c => c.id !== category.id));
+                        } catch (error) {
+                          console.error('Error deleting category:', error);
+                          alert('Error al eliminar la categoría');
+                        }
+                      }
+                    }}
+                  >
                     <Trash2 size={18} />
                   </button>
                 </td>
               </tr>
             ))}
+            
+            {!isLoading && filteredCategories.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-6 py-8 text-center text-brand-subtext">
+                  No se encontraron categorías.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

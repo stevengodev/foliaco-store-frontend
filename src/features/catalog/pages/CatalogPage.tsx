@@ -10,13 +10,28 @@ export const CatalogPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const addItem = useCartStore((state) => state.addItem);
   
-  // Tipamos el JSON como un array de Product
-  const products: Product[] = mockProducts as unknown as Product[];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  React.useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const { catalogService } = await import('@/services/catalogService');
+        const data = await catalogService.getProducts();
+        setProducts(data);
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProducts();
+  }, []);
 
   // Filtramos por búsqueda simple
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchTerm.toLowerCase())
+    product.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddToCart = (product: Product) => {

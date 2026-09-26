@@ -14,23 +14,34 @@ export const ProductDetailsPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'details' | 'shipping'>('details');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulando carga de producto por ID
-    const foundProduct = (mockProductsData as unknown as Product[]).find(
-      (p) => p.id === Number(id)
-    );
-    
-    if (foundProduct) {
-      setProduct(foundProduct);
-      
-      // Establecer imagen inicial
-      const featuredImage = foundProduct.images.find(img => img.isFeatured);
-      if (featuredImage) {
-        setSelectedImage(featuredImage.url);
-      } else if (foundProduct.images.length > 0) {
-        setSelectedImage(foundProduct.images[0].url);
+    const loadProduct = async () => {
+      try {
+        setIsLoading(true);
+        const { catalogService } = await import('@/services/catalogService');
+        const foundProduct = await catalogService.getProductById(Number(id));
+        setProduct(foundProduct);
+        
+        // Establecer imagen inicial si existen
+        if (foundProduct.images && foundProduct.images.length > 0) {
+          const featuredImage = foundProduct.images.find(img => img.isFeatured);
+          if (featuredImage) {
+            setSelectedImage(featuredImage.url);
+          } else {
+            setSelectedImage(foundProduct.images[0].url);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading product details:', error);
+      } finally {
+        setIsLoading(false);
       }
+    };
+
+    if (id) {
+      loadProduct();
     }
   }, [id]);
 
@@ -45,7 +56,7 @@ export const ProductDetailsPage: React.FC = () => {
     );
   }
 
-  const isOutOfStock = product.stock === 0;
+  const isOutOfStock = product.stock !== undefined && product.stock === 0;
 
   const handleAddToCart = () => {
     addItem(product, 1);
@@ -88,7 +99,7 @@ export const ProductDetailsPage: React.FC = () => {
           </div>
 
           {/* Miniaturas */}
-          {product.images.length > 1 && (
+          {product.images && product.images.length > 1 && (
             <div className="flex flex-wrap gap-3">
               {product.images.map((img) => (
                 <button
@@ -111,7 +122,7 @@ export const ProductDetailsPage: React.FC = () => {
         <div className="flex flex-col">
           <div className="mb-2">
             <span className="text-xs font-semibold text-brand-subtext tracking-wider uppercase">
-              SKU: {product.sku}
+              SKU: {product.sku} | Marca: {product.brand}
             </span>
           </div>
           
@@ -140,7 +151,7 @@ export const ProductDetailsPage: React.FC = () => {
               ) : (
                 <span className="flex items-center text-green-600 font-medium">
                   <Check size={16} className="mr-1" />
-                  En stock ({product.stock} unidades)
+                  En stock {product.stock !== undefined ? `(${product.stock} unidades)` : ''}
                 </span>
               )}
             </div>

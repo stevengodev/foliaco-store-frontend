@@ -24,7 +24,47 @@ export const AdminProductFormPage: React.FC = () => {
   const [features, setFeatures] = useState<{ key: string, value: string }[]>([]);
 
   // Estado para las imágenes
-  const [images, setImages] = useState<{ file: File | null, preview: string, featured: boolean }[]>([]);
+  const [images, setImages] = useState<{ file: File | null, preview: string, featured: boolean, fileKey?: string }[]>([]);
+
+  // Cargar datos si estamos editando
+  React.useEffect(() => {
+    const loadProduct = async () => {
+      if (isEditing && id) {
+        try {
+          const { catalogService } = await import('@/services/catalogService');
+          const p = await catalogService.getProductById(Number(id));
+          
+          setFormData({
+            sku: p.sku || '',
+            name: p.name || '',
+            description: p.description || '',
+            brand: p.brand || '',
+            categoryId: p.category ? String(p.category.id) : '',
+            price: String(p.price || ''),
+            active: p.active !== undefined ? p.active : true
+          });
+
+          if (p.features) {
+            const fArray = Object.entries(p.features).map(([k, v]) => ({ key: k, value: v as string }));
+            setFeatures(fArray);
+          }
+
+          if (p.images && p.images.length > 0) {
+            const imgArray = p.images.map(img => ({
+              file: null, // No tenemos el File original, pero sí la URL
+              preview: img.url,
+              featured: img.featured,
+              fileKey: img.fileKey
+            }));
+            setImages(imgArray);
+          }
+        } catch (error) {
+          console.error("Error loading product", error);
+        }
+      }
+    };
+    loadProduct();
+  }, [id, isEditing]);
 
   // --- Handlers para Características ---
   const handleAddFeature = () => setFeatures([...features, { key: '', value: '' }]);
@@ -68,32 +108,75 @@ export const AdminProductFormPage: React.FC = () => {
     setImages(newImages);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Transformar features array a HashMap obj
-    const featuresMap = features.reduce((acc, curr) => {
-      if (curr.key.trim() && curr.value.trim()) {
-        acc[curr.key] = curr.value;
+    try {
+      const { catalogService } = await import('@/services/catalogService');
+      const axios = (await import('axios')).default;
+      
+      // 1. Identificar imágenes nuevas
+      const newImages = images.filter(img => img.file !== null);
+      let uploadedFilesMap = new Map<File, string>();
+
+      // 2. Si hay nuevas, pedir presigned URLs y subirlas
+      if (newImages.length > 0) {
+        const filenames = newImages.map(img => img.file!.name);
+        const presignedUrls = await catalogService.getPresignedUrls(filenames);
+        
+        for (let i = 0; i < newImages.length; i++) {
+          const file = newImages[i].file!;
+          const presigned = presignedUrls[i];
+          
+          let contentType = 'application/octet-stream';
+          const lowerName = file.name.toLowerCase();
+          if (lowerName.endsWith('.png')) contentType = 'image/png';
+          else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) contentType = 'image/jpeg';
+          else if (lowerName.endsWith('.webp')) contentType = 'image/webp';
+          else if (lowerName.endsWith('.gif')) contentType = 'image/gif';
+          
+          await axios.put(presigned.url, file, {
+            headers: {
+              'Content-Type': contentType
+            }
+          });
+          
+          uploadedFilesMap.set(file, presigned.fileKey);
+        }
       }
-      return acc;
-    }, {} as Record<string, string>);
 
-    const payload = {
-      ...formData,
-      price: parseFloat(formData.price),
-      categoryId: parseInt(formData.categoryId),
-      features: featuresMap,
-      images: images.map((img, idx) => ({
-        fileKey: img.file ? img.file.name : 'sin-archivo', // Aquí irá la llave devuelta por el FileController al subir
-        order: idx,
-        featured: img.featured
-      }))
-    };
+      // Transformar features array a HashMap obj
+      const featuresMap = features.reduce((acc, curr) => {
+        if (curr.key.trim() && curr.value.trim()) {
+          acc[curr.key] = curr.value;
+        }
+        return acc;
+      }, {} as Record<string, string>);
 
-    console.log('Guardando producto:', payload);
-    alert(`Producto ${isEditing ? 'actualizado' : 'creado'} con éxito (Simulado).`);
-    navigate('/admin/catalog/products');
+      const payload = {
+        ...formData,
+        price: parseFloat(formData.price),
+        categoryId: parseInt(formData.categoryId),
+        features: featuresMap,
+        images: images.map((img, idx) => ({
+          fileKey: img.file ? uploadedFilesMap.get(img.file) : img.fileKey,
+          order: idx,
+          featured: img.featured
+        }))
+      };
+
+      if (isEditing && id) {
+        await catalogService.updateProduct(Number(id), payload);
+        alert(`Producto actualizado con éxito.`);
+      } else {
+        await catalogService.createProduct(payload);
+        alert(`Producto creado con éxito.`);
+      }
+      navigate('/admin/catalog/products');
+    } catch (error) {
+      console.error('Error al guardar el producto:', error);
+      alert('Ocurrió un error al guardar el producto.');
+    }
   };
 
   return (

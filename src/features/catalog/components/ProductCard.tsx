@@ -12,11 +12,11 @@ interface ProductCardProps {
 import { Link } from 'react-router-dom';
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
-  const mainImage = product.images.length > 0 
+  const mainImage = product.images && product.images.length > 0 
     ? product.images.find(img => img.isFeatured)?.url || product.images[0].url
     : 'https://via.placeholder.com/300?text=Sin+Imagen';
 
-  const isOutOfStock = product.stock === 0;
+  const isOutOfStock = product.stock !== undefined && product.stock === 0;
 
   return (
     <Link to={`/products/${product.id}`} className="block h-full hover:shadow-md transition-shadow rounded-xl">

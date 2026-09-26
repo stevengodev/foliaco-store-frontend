@@ -1,15 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
 import { Input } from '@/components/common/Input/Input';
-import mockProducts from '@/features/catalog/data/mockProducts.json';
 import type { Product } from '@/features/catalog/types/product';
+import { catalogService } from '@/services/catalogService';
 
 export const AdminProductsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const products = mockProducts as unknown as Product[];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setIsLoading(true);
+        const data = await catalogService.getProducts();
+        setProducts(data);
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProducts();
+  }, []);
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -72,8 +88,15 @@ export const AdminProductsPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-brand-border">
-            {filteredProducts.map((product) => {
-              const mainImage = product.images.length > 0 ? product.images[0].url : 'https://via.placeholder.com/40';
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center text-brand-subtext">
+                  Cargando productos...
+                </td>
+              </tr>
+            ) : filteredProducts.map((product) => {
+              const mainImage = product.images && product.images.length > 0 ? product.images[0].url : 'https://via.placeholder.com/40';
+              const stock = product.stock !== undefined ? product.stock : 0;
               return (
                 <tr key={product.id} className="hover:bg-brand-bg">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -95,10 +118,10 @@ export const AdminProductsPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      product.stock > 10 ? 'bg-green-100 text-green-800' : 
-                      product.stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                      stock > 10 ? 'bg-green-100 text-green-800' : 
+                      stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
                     }`}>
-                      {product.stock} unid.
+                      {stock} unid.
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -109,7 +132,21 @@ export const AdminProductsPage: React.FC = () => {
                     >
                       <Edit2 size={18} />
                     </button>
-                    <button className="text-red-600 hover:text-red-900 transition-colors" title="Eliminar">
+                    <button 
+                      className="text-red-600 hover:text-red-900 transition-colors" 
+                      title="Eliminar"
+                      onClick={async () => {
+                        if (window.confirm(`¿Estás seguro de eliminar el producto "${product.name}"?`)) {
+                          try {
+                            await catalogService.deleteProduct(product.id);
+                            setProducts(products.filter(p => p.id !== product.id));
+                          } catch (error) {
+                            console.error('Error deleting product:', error);
+                            alert('Error al eliminar el producto');
+                          }
+                        }
+                      }}
+                    >
                       <Trash2 size={18} />
                     </button>
                   </td>
@@ -117,7 +154,7 @@ export const AdminProductsPage: React.FC = () => {
               );
             })}
             
-            {filteredProducts.length === 0 && (
+            {!isLoading && filteredProducts.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-8 text-center text-brand-subtext">
                   No se encontraron productos que coincidan con la búsqueda.

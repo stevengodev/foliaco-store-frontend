@@ -168,7 +168,14 @@ export const AdminLayout: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-brand-border">
-          <Button className="w-full justify-start text-red-600 bg-red-50 hover:text-red-700 hover:bg-red-100 border-none shadow-none">
+          <Button 
+            className="w-full justify-start text-red-600 bg-red-50 hover:text-red-700 hover:bg-red-100 border-none shadow-none"
+            onClick={async () => {
+              const { useAuthStore } = await import('@/features/users/store/authStore');
+              await useAuthStore.getState().logout();
+              window.location.href = '/login';
+            }}
+          >
             <LogOut size={20} />
             Cerrar Sesión
           </Button>
