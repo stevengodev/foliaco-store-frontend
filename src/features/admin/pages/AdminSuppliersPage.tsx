@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Plus, Building2, MapPin, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
+import { useNavigate } from 'react-router-dom';
 
 const mockSuppliers = [
   { id: 'PROV-001', name: 'Distribuidora Tecnológica S.A.', contact: 'Martín Silva', email: 'ventas@distritec.com', phone: '+54 11 4444-5555', address: 'Av. Corrientes 1234, CABA', status: 'Activo' },
@@ -10,6 +11,7 @@ const mockSuppliers = [
 
 export const AdminSuppliersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
   const filteredSuppliers = mockSuppliers.filter(supplier => 
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -17,14 +19,17 @@ export const AdminSuppliersPage: React.FC = () => {
   );
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-brand-text">Gestión de Proveedores</h1>
           <p className="text-sm text-brand-subtext mt-1">Administra la información de los proveedores y distribuidores.</p>
         </div>
-        <Button className="shrink-0 bg-brand-primary hover:bg-brand-dark">
+        <Button 
+          className="shrink-0 bg-brand-primary hover:bg-brand-dark"
+          onClick={() => navigate('/admin/suppliers/new')}
+        >
           <Plus size={18} />
           Nuevo Proveedor
         </Button>
@@ -101,7 +106,11 @@ export const AdminSuppliersPage: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button className="text-brand-primary hover:text-brand-dark mr-3 transition-colors" title="Editar">
+                  <button 
+                    onClick={() => navigate(`/admin/suppliers/edit/${supplier.id}`)}
+                    className="text-brand-primary hover:text-brand-dark mr-3 transition-colors" 
+                    title="Editar"
+                  >
                     <Edit2 size={18} />
                   </button>
                   <button className="text-red-600 hover:text-red-900 transition-colors" title="Eliminar">

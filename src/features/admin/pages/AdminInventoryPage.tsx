@@ -1,18 +1,51 @@
 import React, { useState } from 'react';
-import { Search, ArrowUpRight, ArrowDownRight, History } from 'lucide-react';
+import { Search, ArrowUpRight, ArrowDownRight, History, X, Save } from 'lucide-react';
 import mockProducts from '@/features/catalog/data/mockProducts.json';
 
 export const AdminInventoryPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [inventory, setInventory] = useState(mockProducts);
+  
+  // Modal state
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [movementType, setMovementType] = useState<'ENTRADA' | 'SALIDA' | null>(null);
+  const [quantity, setQuantity] = useState<number | ''>(1);
 
   // Filtramos por búsqueda simple
-  const filteredInventory = mockProducts.filter(product => 
+  const filteredInventory = inventory.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const openModal = (item: any, type: 'ENTRADA' | 'SALIDA') => {
+    setSelectedItem(item);
+    setMovementType(type);
+    setQuantity(1);
+  };
+
+  const closeModal = () => {
+    setSelectedItem(null);
+    setMovementType(null);
+    setQuantity(1);
+  };
+
+  const handleSaveMovement = () => {
+    if (!selectedItem || !movementType || quantity === '' || quantity <= 0) return;
+
+    setInventory(prev => prev.map(item => {
+      if (item.id === selectedItem.id) {
+        const adjustment = movementType === 'ENTRADA' ? Number(quantity) : -Number(quantity);
+        const newStock = Math.max(0, item.stock + adjustment);
+        return { ...item, stock: newStock };
+      }
+      return item;
+    }));
+    
+    closeModal();
+  };
+
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
@@ -88,11 +121,19 @@ export const AdminInventoryPage: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end gap-2">
-                    <button className="flex items-center gap-1 text-green-600 hover:text-green-900 bg-green-50 px-2 py-1 rounded transition-colors" title="Ingresar Stock">
+                    <button 
+                      onClick={() => openModal(item, 'ENTRADA')}
+                      className="flex items-center gap-1 text-green-600 hover:text-green-900 bg-green-50 px-2 py-1 rounded transition-colors" 
+                      title="Ingresar Stock"
+                    >
                       <ArrowUpRight size={16} />
                       <span className="text-xs">Entrada</span>
                     </button>
-                    <button className="flex items-center gap-1 text-red-600 hover:text-red-900 bg-red-50 px-2 py-1 rounded transition-colors" title="Retirar Stock">
+                    <button 
+                      onClick={() => openModal(item, 'SALIDA')}
+                      className="flex items-center gap-1 text-red-600 hover:text-red-900 bg-red-50 px-2 py-1 rounded transition-colors" 
+                      title="Retirar Stock"
+                    >
                       <ArrowDownRight size={16} />
                       <span className="text-xs">Salida</span>
                     </button>
@@ -111,6 +152,65 @@ export const AdminInventoryPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Modal */}
+      {selectedItem && movementType && (
+        <div className="fixed inset-0 bg-gray-900/10 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm p-6 relative flex flex-col transform transition-all duration-300">
+            <button 
+              onClick={closeModal}
+              className="absolute top-4 right-4 text-brand-subtext hover:text-brand-text transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-xl font-bold text-brand-text mb-4">
+              Registrar {movementType === 'ENTRADA' ? 'Entrada' : 'Salida'}
+            </h2>
+            
+            <div className="mb-4">
+              <span className="block text-sm text-brand-subtext mb-1">Producto</span>
+              <span className="font-medium text-brand-text block">{selectedItem.name}</span>
+              <span className="text-xs text-brand-subtext">SKU: {selectedItem.sku}</span>
+            </div>
+
+            <div className="flex justify-between items-center mb-6 bg-brand-bg p-3 rounded-lg border border-brand-border">
+              <span className="text-sm font-medium text-brand-subtext">Stock Actual:</span>
+              <span className="text-lg font-bold text-brand-text">{selectedItem.stock} uds</span>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-brand-text mb-2">
+                Cantidad a {movementType === 'ENTRADA' ? 'Ingresar' : 'Retirar'}
+              </label>
+              <input 
+                type="number"
+                min="1"
+                className="w-full border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value === '' ? '' : parseInt(e.target.value))}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-auto">
+              <button 
+                onClick={closeModal}
+                className="px-4 py-2 text-brand-text border border-brand-border rounded-lg hover:bg-brand-bg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleSaveMovement}
+                className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors ${
+                  movementType === 'ENTRADA' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                <Save size={18} />
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

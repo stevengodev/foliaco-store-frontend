@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
 import { useCartStore } from '@/features/cart/store/cartStore';
+import { useAuthStore } from '@/features/users/store/authStore';
 
 export const Navbar: React.FC = () => {
   // Conectamos con el estado global de Zustand
   const cartItemsCount = useCartStore((state) => state.getTotalItems());
-  const isAuthenticated = true; // Hardcoded to true for testing MyOrders
+  const { isAuthenticated, user, logout } = useAuthStore();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-brand-border bg-white/80 backdrop-blur-md">
@@ -50,21 +51,21 @@ export const Navbar: React.FC = () => {
           <div className="h-6 w-px bg-brand-border mx-1 hidden sm:block"></div>
 
           {isAuthenticated ? (
-            <div className="hidden sm:flex gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <Link to="/profile/orders">
                 <Button variant="secondary" className="flex">
                   <User size={18} />
                   Mi Perfil
                 </Button>
               </Link>
+              <Button variant="secondary" onClick={() => logout()} className="flex" title="Cerrar sesión">
+                <LogOut size={18} />
+              </Button>
             </div>
           ) : (
             <div className="hidden sm:flex gap-2">
               <Link to="/login">
                 <Button variant="secondary">Ingresar</Button>
-              </Link>
-              <Link to="/register">
-                <Button variant="primary">Crear Cuenta</Button>
               </Link>
             </div>
           )}

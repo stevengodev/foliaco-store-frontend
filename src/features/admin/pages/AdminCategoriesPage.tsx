@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
 
@@ -10,6 +11,8 @@ const mockCategories = [
 ];
 
 export const AdminCategoriesPage: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="w-full">
       {/* Header */}
@@ -18,7 +21,10 @@ export const AdminCategoriesPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-brand-text">Categorías</h1>
           <p className="text-sm text-brand-subtext mt-1">Organiza el catálogo de productos.</p>
         </div>
-        <Button className="shrink-0 bg-brand-primary hover:bg-brand-dark">
+        <Button 
+          className="shrink-0 bg-brand-primary hover:bg-brand-dark"
+          onClick={() => navigate('/admin/catalog/categories/new')}
+        >
           <Plus size={18} />
           Nueva Categoría
         </Button>
@@ -72,7 +78,11 @@ export const AdminCategoriesPage: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button className="text-brand-primary hover:text-brand-dark mr-3 transition-colors" title="Editar">
+                  <button 
+                    className="text-brand-primary hover:text-brand-dark mr-3 transition-colors" 
+                    title="Editar"
+                    onClick={() => navigate(`/admin/catalog/categories/edit/${category.id}`)}
+                  >
                     <Edit2 size={18} />
                   </button>
                   <button className="text-red-600 hover:text-red-900 transition-colors" title="Eliminar">

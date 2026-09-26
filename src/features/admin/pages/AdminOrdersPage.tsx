@@ -3,11 +3,42 @@ import { Search, Eye, Filter } from 'lucide-react';
 
 // Mock de Pedidos
 const mockOrders = [
-  { id: 'ORD-2026-001', date: '2026-08-29', customer: 'Juan Pérez', total: 149.00, status: 'PENDING' },
-  { id: 'ORD-2026-002', date: '2026-08-29', customer: 'María Gómez', total: 89.50, status: 'PROCESSING' },
-  { id: 'ORD-2026-003', date: '2026-08-28', customer: 'Carlos López', total: 320.00, status: 'SHIPPED' },
-  { id: 'ORD-2026-004', date: '2026-08-27', customer: 'Ana Torres', total: 45.00, status: 'DELIVERED' },
-  { id: 'ORD-2026-005', date: '2026-08-27', customer: 'Luis Martínez', total: 110.00, status: 'CANCELLED' },
+  { 
+    id: 'ORD-2026-001', date: '2026-08-29', customer: 'Juan Pérez', email: 'juan@ejemplo.com', phone: '+54 11 1234-5678',
+    total: 149.00, status: 'PENDING',
+    items: [
+      { name: 'Producto A', quantity: 2, price: 50.00 },
+      { name: 'Producto B', quantity: 1, price: 49.00 }
+    ]
+  },
+  { 
+    id: 'ORD-2026-002', date: '2026-08-29', customer: 'María Gómez', email: 'maria@ejemplo.com', phone: '+54 11 8765-4321',
+    total: 89.50, status: 'PROCESSING',
+    items: [
+      { name: 'Producto C', quantity: 1, price: 89.50 }
+    ]
+  },
+  { 
+    id: 'ORD-2026-003', date: '2026-08-28', customer: 'Carlos López', email: 'carlos@ejemplo.com', phone: '+54 11 5555-5555',
+    total: 320.00, status: 'SHIPPED',
+    items: [
+      { name: 'Producto D', quantity: 4, price: 80.00 }
+    ]
+  },
+  { 
+    id: 'ORD-2026-004', date: '2026-08-27', customer: 'Ana Torres', email: 'ana@ejemplo.com', phone: '+54 11 9999-9999',
+    total: 45.00, status: 'DELIVERED',
+    items: [
+      { name: 'Producto E', quantity: 3, price: 15.00 }
+    ]
+  },
+  { 
+    id: 'ORD-2026-005', date: '2026-08-27', customer: 'Luis Martínez', email: 'luis@ejemplo.com', phone: '+54 11 1111-1111',
+    total: 110.00, status: 'CANCELLED',
+    items: [
+      { name: 'Producto F', quantity: 1, price: 110.00 }
+    ]
+  },
 ];
 
 export const AdminOrdersPage: React.FC = () => {
@@ -35,8 +66,84 @@ export const AdminOrdersPage: React.FC = () => {
     order.customer.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handlePrintOrder = (order: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>Reporte de Pedido ${order.id}</title>
+          <style>
+            body { font-family: 'Inter', sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo { font-size: 28px; font-weight: bold; color: #FF6B00; }
+            .details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+            .section-title { font-weight: bold; font-size: 14px; text-transform: uppercase; color: #666; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+            th { background-color: #f9fafb; font-weight: 600; }
+            .total { text-align: right; font-size: 18px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo">Foliaco Store</div>
+            <div style="text-align: right;">
+              <h2 style="margin:0;">Pedido ${order.id}</h2>
+              <p style="margin:5px 0 0 0; color:#666;">Fecha: ${order.date}</p>
+              <p style="margin:5px 0 0 0; color:#666;">Estado: ${order.status}</p>
+            </div>
+          </div>
+          
+          <div class="details">
+            <div>
+              <div class="section-title">Datos del Cliente</div>
+              <p style="margin: 4px 0;"><strong>Nombre:</strong> ${order.customer}</p>
+              <p style="margin: 4px 0;"><strong>Email:</strong> ${order.email}</p>
+              <p style="margin: 4px 0;"><strong>Teléfono:</strong> ${order.phone}</p>
+            </div>
+            <div>
+              <div class="section-title">Información Adicional</div>
+              <p style="margin: 4px 0;"><strong>Método de pago:</strong> Tarjeta de Crédito</p>
+              <p style="margin: 4px 0;"><strong>Dirección de envío:</strong> Av. Siempre Viva 123</p>
+            </div>
+          </div>
+
+          <div class="section-title">Productos</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio Unit.</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.items.map((item: any) => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>${item.quantity}</td>
+                  <td>$${item.price.toFixed(2)}</td>
+                  <td>$${(item.quantity * item.price).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="total">
+            Total a Pagar: $${order.total.toFixed(2)}
+          </div>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
@@ -110,9 +217,12 @@ export const AdminOrdersPage: React.FC = () => {
                   ${order.total.toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button className="text-brand-primary hover:text-brand-dark flex items-center justify-end w-full gap-1 transition-colors">
+                  <button 
+                    onClick={() => handlePrintOrder(order)}
+                    className="text-brand-primary hover:text-brand-dark flex items-center justify-end w-full gap-1 transition-colors"
+                  >
                     <Eye size={18} />
-                    <span>Ver Detalles</span>
+                    <span>Reporte</span>
                   </button>
                 </td>
               </tr>

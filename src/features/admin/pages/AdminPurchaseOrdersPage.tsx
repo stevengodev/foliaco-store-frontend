@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Plus, Eye, Filter, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, Eye, Filter, CheckCircle2, Edit2 } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
+import { useNavigate } from 'react-router-dom';
 
 // Mock Data
 const mockPurchaseOrders = [
@@ -32,6 +33,7 @@ const mockPurchaseOrders = [
 
 export const AdminPurchaseOrdersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
   
   // Usamos estado local para poder simular la recepción
   const [orders, setOrders] = useState(mockPurchaseOrders);
@@ -64,7 +66,10 @@ export const AdminPurchaseOrdersPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-brand-text">Órdenes de Compra</h1>
           <p className="text-sm text-brand-subtext mt-1">Gestiona el abastecimiento solicitando stock a tus proveedores.</p>
         </div>
-        <Button className="shrink-0 bg-brand-primary hover:bg-brand-dark">
+        <Button 
+          className="shrink-0 bg-brand-primary hover:bg-brand-dark"
+          onClick={() => navigate('/admin/suppliers/orders/new')}
+        >
           <Plus size={18} />
           Nueva Orden
         </Button>
@@ -149,10 +154,18 @@ export const AdminPurchaseOrdersPage: React.FC = () => {
                         title="Marcar como recibido e ingresar a inventario"
                       >
                         <CheckCircle2 size={16} />
-                        <span>Recibir</span>
+                        <span className="hidden lg:inline">Recibir</span>
                       </button>
                     )}
-                    <button className="text-brand-primary hover:text-brand-dark flex items-center gap-1 transition-colors">
+                    <button 
+                      onClick={() => navigate(`/admin/suppliers/orders/edit/${order.id}`)}
+                      className="text-brand-primary hover:text-brand-dark flex items-center gap-1 transition-colors bg-blue-50 px-2 py-1 rounded"
+                      title="Editar orden"
+                    >
+                      <Edit2 size={16} />
+                      <span className="hidden lg:inline">Editar</span>
+                    </button>
+                    <button className="text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors px-2 py-1">
                       <Eye size={18} />
                     </button>
                   </div>

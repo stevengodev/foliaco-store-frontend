@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
 import { Input } from '@/components/common/Input/Input';
@@ -6,6 +7,7 @@ import mockProducts from '@/features/catalog/data/mockProducts.json';
 import type { Product } from '@/features/catalog/types/product';
 
 export const AdminProductsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const products = mockProducts as unknown as Product[];
 
@@ -22,7 +24,10 @@ export const AdminProductsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-brand-text">Gestión de Productos</h1>
           <p className="text-sm text-brand-subtext mt-1">Agrega, edita y elimina los productos del catálogo.</p>
         </div>
-        <Button className="shrink-0 bg-brand-primary hover:bg-brand-dark">
+        <Button 
+          className="shrink-0 bg-brand-primary hover:bg-brand-dark"
+          onClick={() => navigate('/admin/catalog/products/new')}
+        >
           <Plus size={18} />
           Nuevo Producto
         </Button>
@@ -97,7 +102,11 @@ export const AdminProductsPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-brand-primary hover:text-brand-dark mr-3 transition-colors" title="Editar">
+                    <button 
+                      className="text-brand-primary hover:text-brand-dark mr-3 transition-colors" 
+                      title="Editar"
+                      onClick={() => navigate(`/admin/catalog/products/edit/${product.id}`)}
+                    >
                       <Edit2 size={18} />
                     </button>
                     <button className="text-red-600 hover:text-red-900 transition-colors" title="Eliminar">
