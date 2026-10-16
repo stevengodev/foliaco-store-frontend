@@ -123,7 +123,8 @@ export const AdminPurchaseOrderFormPage: React.FC = () => {
       navigate('/admin/suppliers/orders');
     } catch (err: any) {
       console.error('Error creating purchase order:', err);
-      setErrorMessage(err.response?.data?.message || 'Error al emitir la orden de compra.');
+      const detail = err.response?.data?.detail || err.response?.data?.message || err.message || 'Error al emitir la orden de compra.';
+      setErrorMessage(detail);
     } finally {
       setIsSaving(false);
     }
