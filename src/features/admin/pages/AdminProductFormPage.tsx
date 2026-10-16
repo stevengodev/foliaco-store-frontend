@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
 import { Input } from '@/components/common/Input/Input';
+import { catalogService } from '@/services/catalogService';
+import type { CategoryResponse } from '@/features/catalog/types/product';
 
 export const AdminProductFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id);
+
+  // Categorías de la API
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(true);
 
   // Estado del producto principal
   const [formData, setFormData] = useState({
@@ -26,12 +32,27 @@ export const AdminProductFormPage: React.FC = () => {
   // Estado para las imágenes
   const [images, setImages] = useState<{ file: File | null, preview: string, featured: boolean, fileKey?: string }[]>([]);
 
+  // Cargar categorías desde la API
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const data = await catalogService.getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error('Error al cargar las categorías:', error);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, []);
+
   // Cargar datos si estamos editando
-  React.useEffect(() => {
+  useEffect(() => {
     const loadProduct = async () => {
       if (isEditing && id) {
         try {
-          const { catalogService } = await import('@/services/catalogService');
           const p = await catalogService.getProductById(Number(id));
           
           setFormData({
@@ -50,7 +71,7 @@ export const AdminProductFormPage: React.FC = () => {
           }
 
           if (p.images && p.images.length > 0) {
-            const imgArray = p.images.map(img => ({
+            const imgArray = p.images.map((img: any) => ({
               file: null, // No tenemos el File original, pero sí la URL
               preview: img.url,
               featured: img.featured,
@@ -112,7 +133,6 @@ export const AdminProductFormPage: React.FC = () => {
     e.preventDefault();
     
     try {
-      const { catalogService } = await import('@/services/catalogService');
       const axios = (await import('axios')).default;
       
       // 1. Identificar imágenes nuevas
@@ -223,18 +243,32 @@ export const AdminProductFormPage: React.FC = () => {
               required 
             />
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-brand-text">Categoría (ID Mock)</label>
+              <label className="text-sm font-semibold text-brand-text">Categoría</label>
               <select 
-                className="w-full border border-brand-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-brand-text bg-white h-[38px]"
+                className="w-full border border-brand-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-brand-text bg-white h-[38px] disabled:bg-gray-100 disabled:cursor-not-allowed"
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                 required
+                disabled={isLoadingCategories}
               >
-                <option value="">Selecciona una categoría...</option>
-                <option value="1">Electrónica</option>
-                <option value="2">Audio</option>
-                <option value="3">Wearables</option>
+                <option value="">
+                  {isLoadingCategories 
+                    ? 'Cargando categorías...' 
+                    : categories.length === 0 
+                      ? 'No hay categorías disponibles' 
+                      : 'Selecciona una categoría...'}
+                </option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
+              {!isLoadingCategories && categories.length === 0 && (
+                <p className="text-xs text-amber-600">
+                  No se encontraron categorías activas. Crea una categoría en la sección de administración primero.
+                </p>
+              )}
             </div>
             <div className="md:col-span-2">
               <label className="text-sm font-semibold text-brand-text block mb-2">Descripción</label>

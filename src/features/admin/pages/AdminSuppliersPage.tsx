@@ -1,21 +1,34 @@
-import React, { useState } from 'react';
-import { Search, Plus, Building2, MapPin, Edit2, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, Building2, Mail, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
 import { useNavigate } from 'react-router-dom';
-
-const mockSuppliers = [
-  { id: 'PROV-001', name: 'Distribuidora Tecnológica S.A.', contact: 'Martín Silva', email: 'ventas@distritec.com', phone: '+54 11 4444-5555', address: 'Av. Corrientes 1234, CABA', status: 'Activo' },
-  { id: 'PROV-002', name: 'Importadora Global', contact: 'Sofía Rey', email: 'contacto@imglobal.com', phone: '+54 11 3333-2222', address: 'Ruta 8 Km 15, Pilar', status: 'Activo' },
-  { id: 'PROV-003', name: 'Electro Mayorista SRL', contact: 'Diego Viale', email: 'ventas@electromay.com', phone: '+54 351 111-2222', address: 'Colón 450, Córdoba', status: 'Inactivo' },
-];
+import { supplierService, type SupplierResponse } from '@/services/supplierService';
 
 export const AdminSuppliersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [suppliers, setSuppliers] = useState<SupplierResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  const filteredSuppliers = mockSuppliers.filter(supplier => 
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    supplier.contact.toLowerCase().includes(searchTerm.toLowerCase())
+  const fetchSuppliers = async () => {
+    try {
+      setIsLoading(true);
+      const data = await supplierService.getSuppliers();
+      setSuppliers(data);
+    } catch (error) {
+      console.error('Error fetching suppliers:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  const filteredSuppliers = suppliers.filter(supplier => 
+    supplier.company.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -44,7 +57,7 @@ export const AdminSuppliersPage: React.FC = () => {
           <input 
             type="text"
             className="pl-10 w-full border border-brand-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-brand-text"
-            placeholder="Buscar por empresa o contacto..."
+            placeholder="Buscar por empresa o correo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -60,10 +73,7 @@ export const AdminSuppliersPage: React.FC = () => {
                 Empresa
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-brand-subtext uppercase tracking-wider">
-                Contacto Principal
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-brand-subtext uppercase tracking-wider">
-                Ubicación
+                Correo Electrónico
               </th>
               <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-brand-subtext uppercase tracking-wider">
                 Estado
@@ -74,7 +84,13 @@ export const AdminSuppliersPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-brand-border">
-            {filteredSuppliers.map((supplier) => (
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-8 text-center text-brand-subtext">
+                  Cargando proveedores...
+                </td>
+              </tr>
+            ) : filteredSuppliers.map((supplier) => (
               <tr key={supplier.id} className="hover:bg-brand-bg transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -82,27 +98,22 @@ export const AdminSuppliersPage: React.FC = () => {
                       <Building2 size={24} />
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-bold text-brand-text">{supplier.name}</div>
-                      <div className="text-xs text-brand-subtext">ID: {supplier.id}</div>
+                      <div className="text-sm font-bold text-brand-text">{supplier.company}</div>
+                      <div className="text-xs text-brand-subtext">ID: #{supplier.id}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-brand-text">{supplier.contact}</div>
-                  <div className="text-sm text-brand-subtext">{supplier.email}</div>
-                  <div className="text-sm text-brand-subtext">{supplier.phone}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center text-sm text-brand-subtext">
-                    <MapPin size={16} className="mr-1 text-brand-subtext" />
-                    <span className="truncate w-48">{supplier.address}</span>
+                  <div className="flex items-center text-sm text-brand-text gap-1.5">
+                    <Mail size={16} className="text-brand-subtext" />
+                    {supplier.email || 'No registrado'}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    supplier.status === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    supplier.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   }`}>
-                    {supplier.status}
+                    {supplier.active ? 'Activo' : 'Inactivo'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -113,17 +124,31 @@ export const AdminSuppliersPage: React.FC = () => {
                   >
                     <Edit2 size={18} />
                   </button>
-                  <button className="text-red-600 hover:text-red-900 transition-colors" title="Eliminar">
+                  <button 
+                    onClick={async () => {
+                      if (window.confirm(`¿Estás seguro de eliminar el proveedor "${supplier.company}"?`)) {
+                        try {
+                          await supplierService.deleteSupplier(supplier.id);
+                          setSuppliers(suppliers.filter(s => s.id !== supplier.id));
+                        } catch (error) {
+                          console.error('Error deleting supplier:', error);
+                          alert('Error al eliminar el proveedor');
+                        }
+                      }
+                    }}
+                    className="text-red-600 hover:text-red-900 transition-colors" 
+                    title="Eliminar"
+                  >
                     <Trash2 size={18} />
                   </button>
                 </td>
               </tr>
             ))}
             
-            {filteredSuppliers.length === 0 && (
+            {!isLoading && filteredSuppliers.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-brand-subtext">
-                  No se encontraron proveedores.
+                <td colSpan={4} className="px-6 py-8 text-center text-brand-subtext">
+                  No se encontraron proveedores registrados.
                 </td>
               </tr>
             )}

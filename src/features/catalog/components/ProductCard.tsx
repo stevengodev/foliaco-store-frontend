@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Product } from '../types/product';
 import { Card } from '@/components/common/Card/Card';
 import { Button } from '@/components/common/Button/Button';
@@ -13,7 +12,7 @@ import { Link } from 'react-router-dom';
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const mainImage = product.images && product.images.length > 0 
-    ? product.images.find(img => img.isFeatured)?.url || product.images[0].url
+    ? product.images.find(img => img.featured)?.url || product.images[0].url
     : 'https://via.placeholder.com/300?text=Sin+Imagen';
 
   const isOutOfStock = product.stock !== undefined && product.stock === 0;

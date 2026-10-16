@@ -1,5 +1,5 @@
 import { axiosInstance } from '@/core/api/axiosInstance';
-import type { Product } from '../types/product';
+import type { Product } from '@/features/catalog/types/product';
 
 export interface PageResponse<T> {
   content: T[];

@@ -44,7 +44,7 @@ export const CartPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => {
             const product = item.product;
-            const mainImage = product.images.length > 0 ? product.images[0].url : 'https://via.placeholder.com/100';
+            const mainImage = (product.images && product.images.length > 0) ? product.images[0].url : 'https://via.placeholder.com/100';
 
             return (
               <div key={product.id} className="bg-white border border-brand-border rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -77,7 +77,7 @@ export const CartPage: React.FC = () => {
                     <button 
                       onClick={() => updateQuantity(product.id, item.quantity + 1)}
                       className="p-2 text-brand-subtext hover:text-brand-primary hover:bg-gray-100 rounded-r-lg transition-colors"
-                      disabled={item.quantity >= product.stock}
+                      disabled={product.stock !== undefined && item.quantity >= product.stock}
                     >
                       <Plus size={16} />
                     </button>

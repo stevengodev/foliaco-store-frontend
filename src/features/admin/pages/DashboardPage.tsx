@@ -1,6 +1,5 @@
 import React from 'react';
 import { Package, Users, ShoppingCart, DollarSign, Clock, Box, Truck, CheckCircle, XCircle } from 'lucide-react';
-import { Card } from '@/components/common/Card/Card';
 
 export const DashboardPage: React.FC = () => {
   return (

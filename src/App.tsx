@@ -1,9 +1,8 @@
-import React from 'react';
 import { Button } from '@/components/common/Button/Button';
 import { Input } from '@/components/common/Input/Input';
 import { Card } from '@/components/common/Card/Card';
 import { Loader } from '@/components/common/Loader/Loader';
-import { ShoppingCart, Search, CreditCard, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   return (

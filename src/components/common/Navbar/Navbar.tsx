@@ -6,8 +6,8 @@ import { useCartStore } from '@/features/cart/store/cartStore';
 import { useAuthStore } from '@/features/users/store/authStore';
 
 export const Navbar: React.FC = () => {
-  // Conectamos con el estado global de Zustand
-  const cartItemsCount = useCartStore((state) => state.getTotalItems());
+  const { setIsCartOpen, getTotalItems } = useCartStore();
+  const cartItemsCount = getTotalItems();
   const { isAuthenticated, user, logout } = useAuthStore();
 
   return (
@@ -39,14 +39,17 @@ export const Navbar: React.FC = () => {
             <Search size={20} />
           </button>
           
-          <Link to="/cart" className="relative p-2 text-brand-subtext hover:text-brand-primary transition-colors">
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className="relative p-2 text-brand-subtext hover:text-brand-primary transition-colors"
+          >
             <ShoppingCart size={20} />
             {cartItemsCount > 0 && (
               <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-brand-accent text-[10px] font-bold text-white">
                 {cartItemsCount}
               </span>
             )}
-          </Link>
+          </button>
 
           <div className="h-6 w-px bg-brand-border mx-1 hidden sm:block"></div>
 
@@ -55,7 +58,7 @@ export const Navbar: React.FC = () => {
               <Link to="/profile/orders">
                 <Button variant="secondary" className="flex">
                   <User size={18} />
-                  Mi Perfil
+                  {user?.email ? user.email.split('@')[0] : 'Mi Perfil'}
                 </Button>
               </Link>
               <Button variant="secondary" onClick={() => logout()} className="flex" title="Cerrar sesión">

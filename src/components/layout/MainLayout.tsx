@@ -1,11 +1,18 @@
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { Navbar } from '@/components/common/Navbar/Navbar';
+import { CartDrawer } from '@/features/cart/components/CartDrawer';
+import { useCartStore } from '@/features/cart/store/cartStore';
 
 export const MainLayout: React.FC = () => {
+  const { isCartOpen, setIsCartOpen } = useCartStore();
+
   return (
-    <div className="flex min-h-screen flex-col bg-brand-bg">
+    <div className="flex min-h-screen flex-col bg-brand-bg relative">
       <Navbar />
+      
+      {/* Drawer centralizado en el layout para evitar problemas de z-index con la Navbar */}
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       
       {/* Contenido dinámico de las páginas públicas/tienda */}
       <main className="flex-1">

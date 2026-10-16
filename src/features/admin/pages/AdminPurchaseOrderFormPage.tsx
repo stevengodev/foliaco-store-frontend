@@ -1,81 +1,132 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
-import { Button } from '@/components/common/Button/Button';
+import { supplierService, type SupplierResponse } from '@/services/supplierService';
+import { catalogService } from '@/services/catalogService';
+import { purchaseOrderService } from '@/services/purchaseOrderService';
+import type { Product } from '@/features/catalog/types/product';
 
-// Simulamos la carga de una orden para edición
-const mockPurchaseOrder = {
-  supplier: 'Distribuidora Tecnológica S.A.',
-  date: '2026-08-28',
-  notes: 'Entrega prioritaria',
-  items: [
-    { id: 1, product: 'Laptop Pro', quantity: 10, unitPrice: 1200 },
-    { id: 2, product: 'Mouse Inalámbrico', quantity: 50, unitPrice: 25 },
-  ]
-};
+interface FormItem {
+  id: number;
+  productId: number;
+  quantity: number;
+  unitCost: number;
+}
 
 export const AdminPurchaseOrderFormPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const isEditing = Boolean(id);
+  const [suppliers, setSuppliers] = useState<SupplierResponse[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    supplier: '',
-    date: new Date().toISOString().split('T')[0],
-    notes: ''
-  });
-
-  const [items, setItems] = useState<{ id: number, product: string, quantity: number, unitPrice: number }[]>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<number | ''>('');
+  const [notes, setNotes] = useState('');
+  const [items, setItems] = useState<FormItem[]>([
+    { id: Date.now(), productId: 0, quantity: 1, unitCost: 0 }
+  ]);
 
   useEffect(() => {
-    if (isEditing) {
-      setFormData({
-        supplier: mockPurchaseOrder.supplier,
-        date: mockPurchaseOrder.date,
-        notes: mockPurchaseOrder.notes
-      });
-      setItems(mockPurchaseOrder.items);
-    } else {
-      // Orden nueva inicia con 1 item vacío
-      setItems([{ id: Date.now(), product: '', quantity: 1, unitPrice: 0 }]);
-    }
-  }, [isEditing, id]);
+    const loadData = async () => {
+      try {
+        const [suppliersData, productsData] = await Promise.all([
+          supplierService.getSuppliers(),
+          catalogService.getProducts()
+        ]);
+        setSuppliers(suppliersData);
+        setProducts(productsData);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+        if (productsData.length > 0) {
+          setItems([
+            { id: Date.now(), productId: productsData[0].id, quantity: 10, unitCost: productsData[0].price * 0.7 }
+          ]);
+        }
+      } catch (err) {
+        console.error('Error loading suppliers or products:', err);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const handleProductChange = (itemId: number, productId: number) => {
+    const selectedProd = products.find(p => p.id === productId);
+    const suggestedCost = selectedProd ? selectedProd.price * 0.7 : 0;
+
+    setItems(prev => prev.map(item => 
+      item.id === itemId 
+        ? { ...item, productId, unitCost: suggestedCost }
+        : item
+    ));
   };
 
-  const handleItemChange = (id: number, field: string, value: string | number) => {
+  const handleQuantityChange = (itemId: number, quantity: number) => {
     setItems(prev => prev.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
+      item.id === itemId ? { ...item, quantity: Math.max(1, quantity) } : item
+    ));
+  };
+
+  const handleCostChange = (itemId: number, unitCost: number) => {
+    setItems(prev => prev.map(item => 
+      item.id === itemId ? { ...item, unitCost: Math.max(0, unitCost) } : item
     ));
   };
 
   const addItem = () => {
-    setItems([...items, { id: Date.now(), product: '', quantity: 1, unitPrice: 0 }]);
+    const defaultProduct = products[0];
+    setItems(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        productId: defaultProduct ? defaultProduct.id : 0,
+        quantity: 1,
+        unitCost: defaultProduct ? defaultProduct.price * 0.7 : 0
+      }
+    ]);
   };
 
-  const removeItem = (id: number) => {
+  const removeItem = (itemId: number) => {
     if (items.length > 1) {
-      setItems(items.filter(item => item.id !== id));
+      setItems(prev => prev.filter(item => item.id !== itemId));
     }
   };
 
-  const totalOrder = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  const totalOrder = items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.supplier || items.length === 0) return;
-    
-    const newOrder = {
-      ...formData,
-      items,
-      total: totalOrder
-    };
-    
-    console.log('Guardando orden de compra:', newOrder);
-    navigate('/admin/suppliers/orders');
+    if (!selectedSupplierId) {
+      setErrorMessage('Por favor selecciona un proveedor.');
+      return;
+    }
+
+    if (items.some(item => !item.productId || item.quantity <= 0)) {
+      setErrorMessage('Por favor asegúrate de que todos los productos y cantidades sean válidos.');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setErrorMessage(null);
+
+      await purchaseOrderService.createPurchaseOrder({
+        supplierId: Number(selectedSupplierId),
+        notes,
+        items: items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitCost: item.unitCost
+        }))
+      });
+
+      alert('¡Orden de compra emitida correctamente!');
+      navigate('/admin/suppliers/orders');
+    } catch (err: any) {
+      console.error('Error creating purchase order:', err);
+      setErrorMessage(err.response?.data?.message || 'Error al emitir la orden de compra.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -90,61 +141,65 @@ export const AdminPurchaseOrderFormPage: React.FC = () => {
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-brand-text">
-            {isEditing ? 'Editar Orden de Compra' : 'Nueva Orden de Compra'}
-          </h1>
+          <h1 className="text-2xl font-bold text-brand-text">Nueva Orden de Compra</h1>
           <p className="text-sm text-brand-subtext mt-1">
-            {isEditing ? `Modificando la orden ${id}` : 'Solicita stock a tus proveedores.'}
+            Solicita abastecimiento de inventario a tus proveedores registrados.
           </p>
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
+          {errorMessage}
+        </div>
+      )}
+
       <form onSubmit={handleSave}>
         {/* Datos Generales */}
         <div className="bg-white rounded-xl shadow-sm border border-brand-border p-6 mb-6">
-          <h2 className="text-lg font-bold text-brand-text mb-4 border-b border-brand-border pb-2">Datos de la Orden</h2>
+          <h2 className="text-lg font-bold text-brand-text mb-4 border-b border-brand-border pb-2">
+            Datos de la Orden
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-brand-text mb-2">
-                Proveedor <span className="text-red-500">*</span>
+                Proveedor Registrado <span className="text-red-500">*</span>
               </label>
               <select 
-                name="supplier"
-                value={formData.supplier}
-                onChange={handleInputChange}
+                value={selectedSupplierId}
+                onChange={(e) => setSelectedSupplierId(e.target.value === '' ? '' : Number(e.target.value))}
                 required
                 className="w-full border border-brand-border rounded-lg px-4 py-2.5 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white"
               >
                 <option value="">Selecciona un proveedor</option>
-                <option value="Distribuidora Tecnológica S.A.">Distribuidora Tecnológica S.A.</option>
-                <option value="Importadora Global">Importadora Global</option>
-                <option value="Electro Mayorista SRL">Electro Mayorista SRL</option>
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.company} ({s.email || 'Sin correo'})
+                  </option>
+                ))}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-brand-text mb-2">
-                Fecha Estimada / Solicitud <span className="text-red-500">*</span>
+                Fecha de Emisión
               </label>
               <input 
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleInputChange}
-                required
-                className="w-full border border-brand-border rounded-lg px-4 py-2.5 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                type="text"
+                disabled
+                value={new Date().toLocaleDateString('es-CO')}
+                className="w-full border border-brand-border rounded-lg px-4 py-2.5 text-brand-subtext bg-brand-bg/50"
               />
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-brand-text mb-2">Notas Adicionales</label>
               <textarea 
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
                 rows={2}
                 className="w-full border border-brand-border rounded-lg px-4 py-2.5 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                placeholder="Instrucciones especiales para el proveedor..."
+                placeholder="Instrucciones para la entrega de stock o condiciones especiales..."
               ></textarea>
             </div>
           </div>
@@ -153,7 +208,7 @@ export const AdminPurchaseOrderFormPage: React.FC = () => {
         {/* Detalle de Productos */}
         <div className="bg-white rounded-xl shadow-sm border border-brand-border p-6 mb-6">
           <div className="flex justify-between items-center mb-4 border-b border-brand-border pb-2">
-            <h2 className="text-lg font-bold text-brand-text">Detalle de Productos</h2>
+            <h2 className="text-lg font-bold text-brand-text">Detalle de Productos a Abastecer</h2>
             <button 
               type="button"
               onClick={addItem}
@@ -168,7 +223,7 @@ export const AdminPurchaseOrderFormPage: React.FC = () => {
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="text-left text-xs font-medium text-brand-subtext uppercase tracking-wider">
-                  <th className="pb-3 pr-4 w-2/5">Producto</th>
+                  <th className="pb-3 pr-4 w-2/5">Producto del Catálogo</th>
                   <th className="pb-3 pr-4 w-1/5">Cantidad</th>
                   <th className="pb-3 pr-4 w-1/5">Costo Unitario ($)</th>
                   <th className="pb-3 pr-4 w-1/5 text-right">Subtotal</th>
@@ -176,26 +231,31 @@ export const AdminPurchaseOrderFormPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {items.map((item, index) => (
+                {items.map((item) => (
                   <tr key={item.id}>
                     <td className="py-3 pr-4">
-                      <input 
-                        type="text"
-                        value={item.product}
-                        onChange={(e) => handleItemChange(item.id, 'product', e.target.value)}
+                      <select 
+                        value={item.productId}
+                        onChange={(e) => handleProductChange(item.id, Number(e.target.value))}
                         required
-                        placeholder="Nombre o código del producto"
-                        className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand-primary"
-                      />
+                        className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand-primary bg-white text-brand-text"
+                      >
+                        <option value={0}>Selecciona producto...</option>
+                        {products.map(prod => (
+                          <option key={prod.id} value={prod.id}>
+                            {prod.name} (SKU: {prod.sku})
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="py-3 pr-4">
                       <input 
                         type="number"
                         min="1"
                         value={item.quantity}
-                        onChange={(e) => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                        onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1)}
                         required
-                        className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand-primary"
+                        className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand-primary text-brand-text"
                       />
                     </td>
                     <td className="py-3 pr-4">
@@ -203,14 +263,14 @@ export const AdminPurchaseOrderFormPage: React.FC = () => {
                         type="number"
                         min="0"
                         step="0.01"
-                        value={item.unitPrice}
-                        onChange={(e) => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                        value={item.unitCost}
+                        onChange={(e) => handleCostChange(item.id, parseFloat(e.target.value) || 0)}
                         required
-                        className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand-primary"
+                        className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-brand-primary text-brand-text"
                       />
                     </td>
                     <td className="py-3 pr-4 text-right font-medium text-brand-text">
-                      ${(item.quantity * item.unitPrice).toFixed(2)}
+                      ${(item.quantity * item.unitCost).toFixed(2)}
                     </td>
                     <td className="py-3 text-right">
                       <button 
@@ -248,10 +308,11 @@ export const AdminPurchaseOrderFormPage: React.FC = () => {
           </button>
           <button 
             type="submit"
-            className="flex items-center gap-2 px-6 py-2.5 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-dark transition-colors shadow-sm"
+            disabled={isSaving}
+            className="flex items-center gap-2 px-6 py-2.5 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-dark transition-colors shadow-sm disabled:opacity-50"
           >
             <Save size={18} />
-            {isEditing ? 'Actualizar Orden' : 'Emitir Orden'}
+            {isSaving ? 'Emitiendo Orden...' : 'Emitir Orden de Compra'}
           </button>
         </div>
       </form>

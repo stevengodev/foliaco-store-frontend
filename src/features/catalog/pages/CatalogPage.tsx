@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { ProductCard } from '../components/ProductCard';
-import mockProducts from '../data/mockProducts.json';
 import type { Product } from '../types/product';
 import { Input } from '@/components/common/Input/Input';
 import { Search } from 'lucide-react';
 import { useCartStore } from '@/features/cart/store/cartStore';
+import { catalogService } from '@/services/catalogService';
 
 export const CatalogPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const addItem = useCartStore((state) => state.addItem);
+  const setIsCartOpen = useCartStore((state) => state.setIsCartOpen);
   
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,7 +17,6 @@ export const CatalogPage: React.FC = () => {
   React.useEffect(() => {
     const loadProducts = async () => {
       try {
-        const { catalogService } = await import('@/services/catalogService');
         const data = await catalogService.getProducts();
         setProducts(data);
       } catch (error) {
@@ -36,6 +36,7 @@ export const CatalogPage: React.FC = () => {
 
   const handleAddToCart = (product: Product) => {
     addItem(product, 1);
+    setIsCartOpen(true);
   };
 
   return (
@@ -58,7 +59,11 @@ export const CatalogPage: React.FC = () => {
       </div>
 
       {/* Grid de Productos */}
-      {filteredProducts.length > 0 ? (
+      {isLoading ? (
+        <div className="text-center py-20 text-brand-subtext">
+          <p className="text-lg">Cargando catálogo de productos...</p>
+        </div>
+      ) : filteredProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map(product => (
             <ProductCard 

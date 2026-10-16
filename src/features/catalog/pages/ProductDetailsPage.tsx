@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, ArrowLeft, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
 import type { Product } from '../types/product';
-import mockProductsData from '../data/mockProducts.json';
 import { useCartStore } from '@/features/cart/store/cartStore';
+import { catalogService } from '@/services/catalogService';
 
 export const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const addItem = useCartStore(state => state.addItem);
+  const setIsCartOpen = useCartStore(state => state.setIsCartOpen);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string>('');
@@ -20,13 +21,12 @@ export const ProductDetailsPage: React.FC = () => {
     const loadProduct = async () => {
       try {
         setIsLoading(true);
-        const { catalogService } = await import('@/services/catalogService');
         const foundProduct = await catalogService.getProductById(Number(id));
         setProduct(foundProduct);
         
         // Establecer imagen inicial si existen
         if (foundProduct.images && foundProduct.images.length > 0) {
-          const featuredImage = foundProduct.images.find(img => img.isFeatured);
+          const featuredImage = foundProduct.images.find(img => img.featured);
           if (featuredImage) {
             setSelectedImage(featuredImage.url);
           } else {
@@ -59,8 +59,27 @@ export const ProductDetailsPage: React.FC = () => {
   const isOutOfStock = product.stock !== undefined && product.stock === 0;
 
   const handleAddToCart = () => {
+    if (!product) return;
     addItem(product, 1);
+    setIsCartOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center text-brand-subtext">
+        <p className="text-lg">Cargando producto...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+        <h2 className="text-2xl font-bold text-brand-text mb-4">Producto no encontrado</h2>
+        <Button onClick={() => navigate('/products')}>Volver al catálogo</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

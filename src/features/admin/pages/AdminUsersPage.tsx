@@ -1,18 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, Mail, Phone, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/common/Button/Button';
+import { authService } from '@/services/authService';
 
-const mockUsers = [
-  { id: 1, name: 'Juan Pérez', email: 'juan@example.com', phone: '+54 11 1234-5678', role: 'Cliente', status: 'Activo', orders: 12 },
-  { id: 2, name: 'María Gómez', email: 'maria@example.com', phone: '+54 11 9876-5432', role: 'Admin', status: 'Activo', orders: 0 },
-  { id: 3, name: 'Carlos López', email: 'carlos@example.com', phone: '+54 351 456-7890', role: 'Cliente', status: 'Inactivo', orders: 1 },
-  { id: 4, name: 'Ana Torres', email: 'ana@example.com', phone: '+54 223 789-0123', role: 'Cliente', status: 'Activo', orders: 4 },
+interface UserItem {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: string;
+  orders: number;
+}
+
+const initialUsers: UserItem[] = [
+  { id: 1, name: 'Juan Pérez', email: 'juan@example.com', phone: '+57 300 123 4567', role: 'Cliente', status: 'Activo', orders: 12 },
+  { id: 2, name: 'María Gómez', email: 'maria@example.com', phone: '+57 311 987 6543', role: 'Admin', status: 'Activo', orders: 0 },
+  { id: 3, name: 'Carlos López', email: 'carlos@example.com', phone: '+57 320 456 7890', role: 'Cliente', status: 'Inactivo', orders: 1 },
+  { id: 4, name: 'Ana Torres', email: 'ana@example.com', phone: '+57 315 789 0123', role: 'Cliente', status: 'Activo', orders: 4 },
 ];
 
 export const AdminUsersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<UserItem[]>(initialUsers);
 
-  const filteredUsers = mockUsers.filter(user => 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await authService.getProfile();
+        if (profile && profile.email) {
+          const roleName = profile.roles?.[0]?.authority?.replace('ROLE_', '') || 'Admin';
+          setUsers(prev => {
+            if (prev.some(u => u.email === profile.email)) return prev;
+            return [
+              {
+                id: Date.now(),
+                name: profile.email.split('@')[0],
+                email: profile.email,
+                phone: '+57 (Sesión Activa)',
+                role: roleName,
+                status: 'Activo',
+                orders: 0
+              },
+              ...prev
+            ];
+          });
+        }
+      } catch (err) {
+        // Usuario no autenticado o modo prueba
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -77,8 +119,8 @@ export const AdminUsersPage: React.FC = () => {
               <tr key={user.id} className="hover:bg-brand-bg transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10 bg-brand-bg rounded-full flex items-center justify-center text-brand-primary font-bold text-lg">
-                      {user.name.charAt(0)}
+                    <div className="flex-shrink-0 h-10 w-10 bg-brand-bg rounded-full flex items-center justify-center text-brand-primary font-bold text-lg border border-brand-border">
+                      {user.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-brand-text">{user.name}</div>
@@ -86,12 +128,12 @@ export const AdminUsersPage: React.FC = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-brand-text flex items-center gap-1"><Mail size={14} className="text-brand-subtext"/> {user.email}</div>
-                  <div className="text-sm text-brand-subtext flex items-center gap-1 mt-1"><Phone size={14} className="text-brand-subtext"/> {user.phone}</div>
+                  <div className="text-sm text-brand-text flex items-center gap-1.5"><Mail size={14} className="text-brand-subtext"/> {user.email}</div>
+                  <div className="text-sm text-brand-subtext flex items-center gap-1.5 mt-1"><Phone size={14} className="text-brand-subtext"/> {user.phone}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    user.role === 'Admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                    user.role === 'ADMIN' || user.role === 'Admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
                   }`}>
                     {user.role}
                   </span>
@@ -107,7 +149,7 @@ export const AdminUsersPage: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button className="text-brand-subtext hover:text-brand-primary transition-colors">
+                  <button className="text-brand-subtext hover:text-brand-primary transition-colors p-1">
                     <MoreVertical size={20} />
                   </button>
                 </td>
